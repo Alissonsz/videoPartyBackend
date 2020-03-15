@@ -14,6 +14,7 @@ io.on('connection', socket=> {
     socket.on('entryRoom', data => {
         socket.join(data.roomURL);
         socket.myRoom = data.roomURL;
+        socket.myName = data.userName;
         
         let event = {type: 'join', message: "entou na sala", userName: data.userName};
         io.to(data.roomURL).emit('newEvent', event);
@@ -32,6 +33,11 @@ io.on('connection', socket=> {
             delete activeRooms[socket.myRoom];
             delete activeVideos[socket.myRoom];
         }
+
+        let event = {type: 'join', message: "deixou a sala", userName: socket.myName};
+        io.to(socket.myRoom).emit('newEvent', event);
+
+        
 
     });
 
