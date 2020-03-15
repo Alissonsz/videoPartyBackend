@@ -12,6 +12,7 @@ var activeRooms = {};
 io.on('connection', socket=> {
     //console.log(socket.handshake.url);
     socket.on('entryRoom', data => {
+        console.log("oi");
         socket.join(data.roomURL);
         socket.myRoom = data.roomURL;
         socket.myName = data.userName;
@@ -61,4 +62,4 @@ io.on('connection', socket=> {
     
 });
 
-server.listen(process.env.PORT || 8000);
+server.listen(8000);
