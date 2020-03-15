@@ -5,26 +5,52 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
-var activeRooms = new Object();
+var activeVideos = new Object();
 
-var events = new Object();
+var activeRooms = {};
 
 io.on('connection', socket=> {
-    console.log(socket.handshake.url);
+    //console.log(socket.handshake.url);
     socket.on('entryRoom', data => {
         socket.join(data.roomURL);
+        socket.myRoom = data.roomURL;
         
         let event = {type: 'join', message: "entou na sala", userName: data.userName};
-        if(data.roomURL in events == false) events[data.roomURL] = [];
-        events[data.roomURL].push(event);
         io.to(data.roomURL).emit('newEvent', event);
+        socket.emit('entryRoomResponse', activeVideos[data.roomURL]);
+
+        if(activeRooms[data.roomURL] == undefined) activeRooms[data.roomURL] = 0;
+        activeRooms[data.roomURL]++;
         
     });
 
+    socket.on('disconnect', data => {
+        //console.log(`Socket disconected from ${socket.myRoom}`);
+        activeRooms[socket.myRoom]--;
+        
+        if(activeRooms[socket.myRoom] == 0){
+            delete activeRooms[socket.myRoom];
+            delete activeVideos[socket.myRoom];
+        }
+
+    });
+
+    socket.on('changePlay', data =>{
+        //console.log("rcv changePlay");
+        io.to(data.roomURL).emit('changePlay', data);
+    })
+
     socket.on('newMessage', data => {
-        console.log(`Received message from ${data.userName} : ${data.message}`);
+        //console.log(`Received message from ${data.userName} : ${data.message}`);
         let event = {type: 'message', message: data.message, userName: data.userName};
-        io.to(data.roomURL).emit('newEvent', event);
+        if(data.message !== '')
+            io.to(data.roomURL).emit('newEvent', event);
+    });
+
+    socket.on('videoHasChange', data => {
+        //console.log("new video");
+        activeVideos[data.roomURL] = data.videoURL;
+        io.to(data.roomURL).emit('videoHasChange', data);
     });
     
 });
